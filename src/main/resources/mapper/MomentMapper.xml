@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pulingle.moment_service.mapper.MomentMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="momentId" parameterType="Moment">
+        INSERT  INTO moment(user_id,thumb_users_list,picture_list,content,create_time,comment_list,privacy_lev)
+        VALUES (#{userId},#{thumbUsersList},#{pictureList},#{content},#{createTime},#{commentList},#{privacyLev})
+    </insert>
+
+</mapper>
