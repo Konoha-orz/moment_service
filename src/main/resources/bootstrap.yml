@@ -1,6 +1,6 @@
 spring:
   application:
-    name: moment_service
+    name: moment-service
   cloud:
     config:
       profile: dev

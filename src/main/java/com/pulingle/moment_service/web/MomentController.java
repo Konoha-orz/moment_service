@@ -21,8 +21,23 @@ public class MomentController {
     @Resource
     private MomentService momentService;
 
+    /**
+    * @param: moment
+    * @return: RespondBody
+    * @Des: 发布动态接口
+    */
     @RequestMapping(value = "/publish",method = RequestMethod.POST)
     public RespondBody publish(@RequestBody Moment moment){
         return momentService.publishMoment(moment);
+    }
+
+    /**
+    * @param: userId
+    * @return: RespondBody
+    * @Des: 根据userId查询用户所有动态信息
+    */
+    @RequestMapping(value = "/queryMomentByUserId",method = RequestMethod.POST)
+    public RespondBody queryMomentByUserId(@RequestBody Moment moment){
+        return momentService.queryMomentByUserId(moment.getUserId());
     }
 }

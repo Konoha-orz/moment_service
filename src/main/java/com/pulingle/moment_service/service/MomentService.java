@@ -17,4 +17,11 @@ public interface MomentService {
     * @Des: 动态发布
     */
     RespondBody publishMoment(Moment moment);
+
+    /**
+    * @param: userId 用户Id
+    * @return: RespondBody
+    * @Des: 根据用户查询所有该用户动态信息
+    */
+    RespondBody queryMomentByUserId(long userId);
 }
