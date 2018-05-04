@@ -1,7 +1,9 @@
 package com.pulingle.moment_service.service;
 
+import com.pulingle.moment_service.domain.dto.MomentDTO;
 import com.pulingle.moment_service.domain.dto.RespondBody;
 import com.pulingle.moment_service.domain.entity.Moment;
+import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 
 /**
  * Created by @杨健 on 2018/4/3 12:33
@@ -16,12 +18,27 @@ public interface MomentService {
     * @return: RespondBody
     * @Des: 动态发布
     */
-    RespondBody publishMoment(Moment moment);
+    RespondBody publishMoment(MomentDTO momentDTO);
+
 
     /**
-    * @param: userId 用户Id
+     * @param: momentDTO(用户Id,页面要求)
+     * @return: RespondBody
+     * @Des: 根据用户id,页面要求,查询所有该用户好友动态信息,包含隐私筛选
+     */
+    RespondBody queryFriendMomentByUserId(MomentDTO momentDTO);
+
+    /**
+    * @param: momentDTO(用户ID,页面要求)
     * @return: RespondBody
-    * @Des: 根据用户查询所有该用户动态信息
+    * @Des: 根据用户ID,页面要求，查询推荐用户的动态信息，包含隐私筛选
     */
-    RespondBody queryMomentByUserId(long userId);
+    RespondBody queryRecommendMoments(MomentDTO momentDTO);
+
+    /**
+     * @param: momentDTO (用户ID,页面要求)
+     * @return: List<Map> 用户动态信息列表
+     * @Des: 根据用户ID，以及是否登录账号，权限，获取个人的动态信息
+     */
+    RespondBody queryMomentsByUserId(MomentDTO momentDTO, HttpServletRequest request);
 }

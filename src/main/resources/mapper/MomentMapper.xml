@@ -5,22 +5,76 @@
 <mapper namespace="com.pulingle.moment_service.mapper.MomentMapper">
     <sql id="allColumn">
          moment_id AS momentId,user_id AS userId,thumb_users_list AS thumbUsersList,picture_list AS pictureList,
-         content,create_time AS createTime,comment_list AS commentList,privacy_lev AS privacyLev
+         content,DATE_FORMAT(create_time,'%Y-%m-%d %h:%m:%s')AS createTime,comment_list AS commentList,privacy_lev AS privacyLev
     </sql>
     <insert id="insert" useGeneratedKeys="true" keyProperty="momentId" parameterType="Moment">
         INSERT  INTO moment(user_id,thumb_users_list,picture_list,content,create_time,comment_list,privacy_lev)
         VALUES (#{userId},#{thumbUsersList},#{pictureList},#{content},#{createTime},#{commentList},#{privacyLev})
     </insert>
-    <select id="queryMomentsByUserId" resultType="java.util.Map">
-        SELECT <include refid="allColumn"/> FROM moment
-        <where>
-            user_id=#{userId}
-        </where>
-    </select>
     <update id="updateTULandCIL">
         UPDATE moment SET thumb_users_list=#{TUL},comment_list=#{CIL}
         <where>
             moment_id=#{momentId}
         </where>
     </update>
+    <select id="countMomentByUserId" resultType="java.lang.Long">
+        SELECT  COUNT(moment_id) FROM moment
+        <where>
+            user_id=#{userId}
+        </where>
+    </select>
+    <select id="queryFriendMoments" resultType="java.util.Map">
+        SELECT <include refid="allColumn"/> FROM moment
+        <where>
+            user_id IN
+            <foreach collection="idList"  item="id" open="(" close=")" separator=",">
+            #{id}
+            </foreach>
+            AND
+            privacy_lev &lt; 3
+        </where>
+        ORDER  BY moment_id DESC
+        limit #{offset},#{size}
+    </select>
+    <select id="queryRecommendMoments" resultType="java.util.Map">
+        SELECT <include refid="allColumn"/> FROM moment
+        <where>
+            user_id IN
+            <foreach collection="idList"  item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+            AND
+            privacy_lev &lt; 2
+        </where>
+        ORDER  BY moment_id DESC
+        limit #{offset},#{size}
+    </select>
+    <select id="queryMomentsByUserId" resultType="java.util.Map">
+        SELECT <include refid="allColumn"/> FROM moment
+        <where>
+            user_id=#{userId}
+            AND
+            privacy_lev &lt; #{privacyLev}
+        </where>
+        ORDER BY moment_id DESC
+        limit #{offset},#{size}
+    </select>
+    <!--<select id="queryMomentsByUserId" resultType="java.util.Map">-->
+        <!--SELECT <include refid="allColumn"/> FROM moment-->
+        <!--<where>-->
+            <!--user_id=#{userId}-->
+        <!--</where>-->
+        <!--ORDER BY moment_id DESC-->
+        <!--limit #{offset},#{size}-->
+    <!--</select>-->
+    <select id="countMomentByUserIdForPrivacy" resultType="java.lang.Long">
+        SELECT  COUNT(moment_id) FROM moment
+        <where>
+            user_id=#{userId}
+            AND
+            privacy_lev &lt; #{privacyLevel}
+        </where>
+    </select>
+
+
 </mapper>
