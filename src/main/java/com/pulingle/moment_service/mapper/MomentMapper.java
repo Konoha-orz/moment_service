@@ -65,9 +65,22 @@ public interface MomentMapper {
 
     /**
      * @param: userId用户Id
-     * @return: int
+     * @return: long
      * @Des: 查询某用户以及隐私程度所有动态记录数
      */
     long countMomentByUserIdForPrivacy(@Param("userId")long userId,@Param("privacyLevel")int privacyLevel);
 
+    /**
+    * @param: userId
+    * @return: long
+    * @Des: 查询用户好友动态数
+    */
+    long countFriendMoments(@Param("idList") List<String> idList);
+
+    /**
+    * @param: userId
+    * @return: List<Map>
+    * @Des: 获取仅一天好友发表动态的用户ID和发布时间
+    */
+    List<Moment> queryFriendNewMomentTime(@Param("idList") List<String> idList);
 }

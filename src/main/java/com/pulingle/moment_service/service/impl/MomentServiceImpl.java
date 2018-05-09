@@ -79,11 +79,6 @@ public class MomentServiceImpl implements MomentService {
         try {
             if (momentDTO.getPageSize() == 0 || momentDTO.getCurrentPage() == 0)
                 return RespondBuilder.buildErrorResponse("pageSize或currentPage不能为0");
-            //计算分页查询的条件
-            long recordNum = momentMapper.countMomentByUserId(momentDTO.getUserId());
-            double d = (double) recordNum / (double) momentDTO.getPageSize();
-            long pageNum = (long) Math.ceil(d);
-            int offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
             //通过user-service获取好友Id列表
             UserIdListDTO userIdListDTO = new UserIdListDTO();
             userIdListDTO.setUserId(momentDTO.getUserId());
@@ -91,56 +86,64 @@ public class MomentServiceImpl implements MomentService {
             if (userFriendListBody.getStatus().equals("0"))
                 return RespondBuilder.buildErrorResponse("获取用户好友列表失败");
             List<String> idList = (List<String>) userFriendListBody.getData();
+            //计算分页查询的条件
+            long recordNum = momentMapper.countFriendMoments(idList);
+            double d = (double) recordNum / (double) momentDTO.getPageSize();
+            long pageNum = (long) Math.ceil(d);
+            int offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
             //根据Id列表查询符合的动态信息
             List<Map> momentList = momentMapper.queryFriendMoments(idList, offset, momentDTO.getPageSize());
-            //根据查询出来的动态，获取显示的用户Id列表
-            Set<String> newIdSet = new HashSet<>();
-            for (Map map : momentList) {
-                newIdSet.add(String.valueOf(map.get("userId")));
-            }
-            //通过user-service获取对应的用户基本信息
-            List<String> newIdList = new ArrayList<>(newIdSet);
-            UserIdListDTO newUserIdListDTO = new UserIdListDTO();
-            newUserIdListDTO.setIdList(newIdList);
-            RespondBody newUserInfoBody = outUserInfoFeign.getUserBasicInfoForMoment(newUserIdListDTO);
-            if (newUserInfoBody.getStatus().equals("0"))
-                return RespondBuilder.buildErrorResponse("获取用户信息失败");
-            //用户信息与动态合并
-            Map userMap = (Map) newUserInfoBody.getData();
-            for (Map map : momentList) {
-                //图片列表的字符串构建成数组
-                String pictureResult = String.valueOf(map.get("pictureList"));
-                String pictureList[] = pictureResult.split(",");
-                map.replace("pictureList", pictureList);
-                //获取点赞数
-                String TUl = String.valueOf(map.get("thumbUsersList"));
-                if (stringRedisTemplate.hasKey(TUl)) {
-                    long thumbNum = stringRedisTemplate.opsForSet().size(TUl);
-                    map.put("thumbNum", thumbNum);
-                } else
-                    map.put("thumbNum", 0);
-                //获取评论数
-                String CIL = String.valueOf(map.get("commentList"));
-                if (stringRedisTemplate.hasKey(CIL)) {
-                    long commentNum = stringRedisTemplate.opsForSet().size(CIL);
-                    map.put("commentNum", commentNum);
-                } else
-                    map.put("commentNum", 0);
-                //组合用户基本信息
-                int userId = (int) map.get("userId");
-                Map basicMap = (Map) userMap.get(USER_BASIC_INFO + userId);
-                if (basicMap.get("nickname") != null)
-                    map.put("nickname", basicMap.get("nickname"));
-                if (basicMap.get("profilePictureUrl") != null)
-                    map.put("profilePictureUrl", basicMap.get("profilePictureUrl"));
-                //检验用户是否对该动态已点赞
-                int isThumb;
-                String thumbUserList = String.valueOf(map.get("thumbUsersList"));
-                if (stringRedisTemplate.opsForSet().isMember(thumbUserList, String.valueOf(momentDTO.getUserId()))) {
-                    isThumb = 1;
-                } else
-                    isThumb = 0;
-                map.put("isThumb", isThumb);
+            //如果有数据则查询对应用户信息
+            if(momentList.size()!=0) {
+                //根据查询出来的动态，获取显示的用户Id列表
+                Set<String> newIdSet = new HashSet<>();
+                for (Map map : momentList) {
+                    newIdSet.add(String.valueOf(map.get("userId")));
+                }
+                //通过user-service获取对应的用户基本信息
+                List<String> newIdList = new ArrayList<>(newIdSet);
+                UserIdListDTO newUserIdListDTO = new UserIdListDTO();
+                newUserIdListDTO.setIdList(newIdList);
+                RespondBody newUserInfoBody = outUserInfoFeign.getUserBasicInfoForMoment(newUserIdListDTO);
+                if (newUserInfoBody.getStatus().equals("0"))
+                    return RespondBuilder.buildErrorResponse("获取用户信息失败");
+                //用户信息与动态合并
+                Map userMap = (Map) newUserInfoBody.getData();
+                for (Map map : momentList) {
+                    //图片列表的字符串构建成数组
+                    String pictureResult = String.valueOf(map.get("pictureList"));
+                    String pictureList[] = pictureResult.split(",");
+                    map.replace("pictureList", pictureList);
+                    //获取点赞数
+                    String TUl = String.valueOf(map.get("thumbUsersList"));
+                    if (stringRedisTemplate.hasKey(TUl)) {
+                        long thumbNum = stringRedisTemplate.opsForSet().size(TUl);
+                        map.put("thumbNum", thumbNum);
+                    } else
+                        map.put("thumbNum", 0);
+                    //获取评论数
+                    String CIL = String.valueOf(map.get("commentList"));
+                    if (stringRedisTemplate.hasKey(CIL)) {
+                        long commentNum = stringRedisTemplate.opsForSet().size(CIL);
+                        map.put("commentNum", commentNum);
+                    } else
+                        map.put("commentNum", 0);
+                    //组合用户基本信息
+                    int userId = (int) map.get("userId");
+                    Map basicMap = (Map) userMap.get(USER_BASIC_INFO + userId);
+                    if (basicMap.get("nickname") != null)
+                        map.put("nickname", basicMap.get("nickname"));
+                    if (basicMap.get("profilePictureUrl") != null)
+                        map.put("profilePictureUrl", basicMap.get("profilePictureUrl"));
+                    //检验用户是否对该动态已点赞
+                    int isThumb;
+                    String thumbUserList = String.valueOf(map.get("thumbUsersList"));
+                    if (stringRedisTemplate.opsForSet().isMember(thumbUserList, String.valueOf(momentDTO.getUserId()))) {
+                        isThumb = 1;
+                    } else
+                        isThumb = 0;
+                    map.put("isThumb", isThumb);
+                }
             }
             //重构返回消息载体
             Map data = new HashMap();
@@ -243,7 +246,6 @@ public class MomentServiceImpl implements MomentService {
         int offset;
         List<Map> resultList;
         try {
-
             //根据是否登录，是否好友按权限查询某用户动态信息
             //没登录，则为查询公开动态
             if (request.getHeader("token") == null || request.getHeader("token").equals("")) {
@@ -254,61 +256,73 @@ public class MomentServiceImpl implements MomentService {
                 offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
                 resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 1);
             } else {
-                //解析token获取用户信息
-                String token = request.getHeader("token");
-                Claims claims = TokenUtil.parseJWT(token);
-                String subject = claims.getSubject();
-                User_info user_info = JSON.parseObject(subject, User_info.class);
-                loginUserId = user_info.getUser_id();
-                //如果查询的用户ID与登录的用户ID相等，则查询该用户全部动态
-                if (user_info.getUser_id() == momentDTO.getUserId()) {
-                    //身份为自己
-                    identity=2;
-                    //计算分页查询的条件
-                    recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 4);
-                    d = (double) recordNum / (double) momentDTO.getPageSize();
-                    pageNum = (long) Math.ceil(d);
-                    offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
-                    resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 4);
-                } else {
-                    //通过Feign查询是否为好友
-                    //封装调用接口参数
-                    User_info user_info1 = new User_info();
-                    user_info1.setUser_id(momentDTO.getUserId());
-                    user_info1.setFriends_list(user_info.getFriends_list());
-                    RespondBody result = outUserInfoFeign.isFriend(user_info1);
-                    if (result.getStatus().equals("0")) {
+                try {
+                    //解析token获取用户信息
+                    String token = request.getHeader("token");
+                    Claims claims = TokenUtil.parseJWT(token);
+                    String subject = claims.getSubject();
+                    User_info user_info = JSON.parseObject(subject, User_info.class);
+                    loginUserId = user_info.getUser_id();
+                    //如果查询的用户ID与登录的用户ID相等，则查询该用户全部动态
+                    if (user_info.getUser_id() == momentDTO.getUserId()) {
+                        //身份为自己
+                        identity = 2;
                         //计算分页查询的条件
-                        recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 1);
+                        recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 4);
                         d = (double) recordNum / (double) momentDTO.getPageSize();
                         pageNum = (long) Math.ceil(d);
                         offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
-                        resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 1);
+                        resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 4);
                     } else {
-                        int flag = (Integer) result.getData();
-                        //是朋友
-                        if (flag == 1) {
-                            //身份为好友
-                            identity=1;
-                            //计算分页查询的条件
-                            recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 1);
-                            d = (double) recordNum / (double) momentDTO.getPageSize();
-                            pageNum = (long) Math.ceil(d);
-                            offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
-                            resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 3);
-                        }
-                        //不是朋友
-                        else {
-                            //身份不是好友
-                            identity=0;
+                        //通过Feign查询是否为好友
+                        //封装调用接口参数
+                        User_info user_info1 = new User_info();
+                        user_info1.setUser_id(momentDTO.getUserId());
+                        user_info1.setFriends_list(user_info.getFriends_list());
+                        RespondBody result = outUserInfoFeign.isFriend(user_info1);
+                        if (result.getStatus().equals("0")) {
                             //计算分页查询的条件
                             recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 1);
                             d = (double) recordNum / (double) momentDTO.getPageSize();
                             pageNum = (long) Math.ceil(d);
                             offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
                             resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 1);
+                        } else {
+                            int flag = (Integer) result.getData();
+                            //是朋友
+                            if (flag == 1) {
+                                //身份为好友
+                                identity = 1;
+                                //计算分页查询的条件
+                                recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 1);
+                                d = (double) recordNum / (double) momentDTO.getPageSize();
+                                pageNum = (long) Math.ceil(d);
+                                offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
+                                resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 3);
+                            }
+                            //不是朋友
+                            else {
+                                //身份不是好友
+                                identity = 0;
+                                //计算分页查询的条件
+                                recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 1);
+                                d = (double) recordNum / (double) momentDTO.getPageSize();
+                                pageNum = (long) Math.ceil(d);
+                                offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
+                                resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 1);
+                            }
                         }
                     }
+                }catch (Exception e){
+                    e.printStackTrace();
+                    //身份不是好友
+                    identity = 0;
+                    //计算分页查询的条件
+                    recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 1);
+                    d = (double) recordNum / (double) momentDTO.getPageSize();
+                    pageNum = (long) Math.ceil(d);
+                    offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
+                    resultList = momentMapper.queryMomentsByUserId(momentDTO.getUserId(), offset, momentDTO.getPageSize(), 1);
                 }
             }
             //返回数据处理
@@ -378,4 +392,6 @@ public class MomentServiceImpl implements MomentService {
         }
         return respondBody;
     }
+
+
 }

@@ -36,6 +36,18 @@
         ORDER  BY moment_id DESC
         limit #{offset},#{size}
     </select>
+    <select id="countFriendMoments" resultType="java.lang.Long">
+        SELECT COUNT(moment_id) FROM moment
+        <where>
+            user_id IN
+            <foreach collection="idList" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+            AND
+            privacy_lev &lt; 3
+        </where>
+    </select>
+
     <select id="queryRecommendMoments" resultType="java.util.Map">
         SELECT <include refid="allColumn"/> FROM moment
         <where>
@@ -75,6 +87,19 @@
             privacy_lev &lt; #{privacyLevel}
         </where>
     </select>
+
+    <select id="queryFriendNewMomentTime" resultType="Moment">
+        SELECT user_id  AS userId, create_time  AS createTime from moment
+        <where>
+            user_id in
+            <foreach collection="idList"  item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+            AND create_time between date_sub(now(),interval 1 day) and now()
+            order by create_time DESC
+        </where>
+    </select>
+
 
 
 </mapper>

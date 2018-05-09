@@ -1,5 +1,6 @@
 package com.pulingle.moment_service.web;
 
+import com.pulingle.moment_service.domain.dto.MomentDTO;
 import com.pulingle.moment_service.domain.dto.RespondBody;
 import com.pulingle.moment_service.domain.dto.ThumbDTO;
 import com.pulingle.moment_service.domain.dto.UserIdListDTO;
@@ -25,8 +26,6 @@ import javax.annotation.Resource;
 public class CommentController {
     @Resource
     private CommentService commentService;
-
-
 
     /**
     * @param: thumbDTO(thumbUsersList,userId)
@@ -54,8 +53,8 @@ public class CommentController {
     * @Des: 根据commentList值查询评论信息
     */
     @RequestMapping(value = "/queryCommentByCIL",method = RequestMethod.POST)
-    public RespondBody queryComment(@RequestBody Moment moment){
-        return commentService.queryCommentByCIL(moment.getCommentList());
+    public RespondBody queryComment(@RequestBody MomentDTO momentDTO){
+        return commentService.queryCommentByCIL(momentDTO);
     }
 
 

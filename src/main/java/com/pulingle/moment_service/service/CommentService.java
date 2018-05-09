@@ -1,5 +1,6 @@
 package com.pulingle.moment_service.service;
 
+import com.pulingle.moment_service.domain.dto.MomentDTO;
 import com.pulingle.moment_service.domain.dto.RespondBody;
 import com.pulingle.moment_service.domain.entity.Comment;
 
@@ -29,5 +30,5 @@ public interface CommentService {
     * @return: RespondBody
     * @Des: 根据commentList查询某个动态的所有评论信息
     */
-    RespondBody queryCommentByCIL(String commentList);
+    RespondBody queryCommentByCIL(MomentDTO momentDTO);
 }

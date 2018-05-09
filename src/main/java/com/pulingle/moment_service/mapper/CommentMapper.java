@@ -23,9 +23,17 @@ public interface CommentMapper {
     int insert(Comment comment);
 
     /**
+     * @param: idList(评论ID列表)
+     * @return: long
+     * @Des: 根据评论ID列表统计评论数
+     */
+    long countCommentByCIL(@Param("idList") List<String> idList);
+
+    /**
     * @param: idList(评论Id列表)
     * @return: List<Map>
     * @Des: 根据评论Id列表查询评论信息列表
     */
-    List<Map> queryCommentByCIL(@Param("idList") List<String> idList);
+    List<Map> queryCommentByCIL(@Param("idList") List<String> idList,@Param("offset")int offset,@Param("size")int size);
+
 }

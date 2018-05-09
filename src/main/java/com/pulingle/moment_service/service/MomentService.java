@@ -5,6 +5,8 @@ import com.pulingle.moment_service.domain.dto.RespondBody;
 import com.pulingle.moment_service.domain.entity.Moment;
 import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 
+import java.util.List;
+
 /**
  * Created by @杨健 on 2018/4/3 12:33
  *
@@ -41,4 +43,6 @@ public interface MomentService {
      * @Des: 根据用户ID，以及是否登录账号，权限，获取个人的动态信息
      */
     RespondBody queryMomentsByUserId(MomentDTO momentDTO, HttpServletRequest request);
+
+
 }

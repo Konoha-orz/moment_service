@@ -43,6 +43,11 @@ public class MomentDTO implements Serializable {
      */
     private int privacyLev;
 
+    /**
+     * Redis中评论ID列表键值
+     */
+    private String commentList;
+
     public long getUserId() {
         return userId;
     }
@@ -91,15 +96,12 @@ public class MomentDTO implements Serializable {
         this.privacyLev = privacyLev;
     }
 
-    @Override
-    public String toString() {
-        return "MomentDTO{" +
-                "userId=" + userId +
-                ", currentPage=" + currentPage +
-                ", pageSize=" + pageSize +
-                ", pictureList=" + Arrays.toString(pictureList) +
-                ", content='" + content + '\'' +
-                ", privacyLev=" + privacyLev +
-                '}';
+
+    public String getCommentList() {
+        return commentList;
+    }
+
+    public void setCommentList(String commentList) {
+        this.commentList = commentList;
     }
 }

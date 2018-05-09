@@ -1,6 +1,7 @@
 package com.pulingle.moment_service.service.impl;
 
 import com.pulingle.moment_service.domain.dto.BasicUserInfoDTO;
+import com.pulingle.moment_service.domain.dto.MomentDTO;
 import com.pulingle.moment_service.domain.dto.RespondBody;
 
 import com.pulingle.moment_service.domain.dto.UserIdListDTO;
@@ -72,45 +73,86 @@ public class CommentServiceImpl implements com.pulingle.moment_service.service.C
     }
 
     @Override
-    public RespondBody queryCommentByCIL(String commentList) {
+    public RespondBody queryCommentByCIL(MomentDTO momentDTO) {
         RespondBody respondBody;
+        //分页查询的条件
+        long recordNum;
+        double d;
+        long pageNum;
+        int offset;
+        List<Map> resultList;
         try{
-            if(!stringRedisTemplate.hasKey(commentList))
-                return RespondBuilder.buildErrorResponse("该动态没有评论");
-            Set<String> redisSet=stringRedisTemplate.opsForSet().members(commentList);
+            if(!stringRedisTemplate.hasKey(momentDTO.getCommentList()))
+            {
+                Map resultMap=new HashMap();
+                resultMap.put("commentList",null);
+                return RespondBuilder.buildNormalResponse(resultMap);
+            }
+            Set<String> redisSet=stringRedisTemplate.opsForSet().members(momentDTO.getCommentList());
             List<String> commentIdList=new ArrayList<>(redisSet);
-            List<Map> resultList=commentMapper.queryCommentByCIL(commentIdList);
+            if(commentIdList.size()<1)
+            {
+                Map resultMap=new HashMap();
+                resultMap.put("commentList",null);
+                return RespondBuilder.buildNormalResponse(resultMap);
+            }
+            //计算分页查询的条件
+            recordNum = commentMapper.countCommentByCIL(commentIdList);
+            d = (double) recordNum / (double) momentDTO.getPageSize();
+            pageNum = (long) Math.ceil(d);
+            offset = (momentDTO.getCurrentPage() - 1) * momentDTO.getPageSize();
+            //根据分页条件查询评论信息
+            resultList=commentMapper.queryCommentByCIL(commentIdList,offset,momentDTO.getPageSize());
+            if(resultList.size()<1) {
+                Map resultMap=new HashMap();
+                resultMap.put("currentPage",momentDTO.getCurrentPage());
+                resultMap.put("pageNum",pageNum);
+                resultMap.put("pageSize",momentDTO.getPageSize());
+                resultMap.put("recordNum",recordNum);
+                resultMap.put("commentList",resultList);
+                respondBody=RespondBuilder.buildNormalResponse(resultMap);
+                return respondBody;
+            }
             //获取评论用户Id列表
             List<String> userIdList=new ArrayList<>();
             for (Map map:resultList){
-                userIdList.add(map.get("userId").toString());
+                if(map.get("userId")!=null)
+                    userIdList.add(map.get("userId").toString());
             }
             //调用用户服务中的获取用户基础信息接口
             UserIdListDTO userIdListDTO=new UserIdListDTO();
             userIdListDTO.setIdList(userIdList);
             RespondBody userInfoBody=outUserInfoFeign.getUserBasicInfo(userIdListDTO);
-            List<Map> userInfoResultList=(List<Map>) userInfoBody.getData();
-            //用户信息封装成Map
-            Map userMap=new HashMap();
-            for(Map map:userInfoResultList){
-                BasicUserInfoDTO user=new BasicUserInfoDTO();
-                user.setUserId(map.get("userId").toString());
-                if(map.containsKey("nickname"))
-                    user.setNickname(map.get("nickname").toString());
-                if(map.containsKey("profilePictureUrl"))
-                    user.setProfilePictureUrl(map.get("profilePictureUrl").toString());
-                userMap.put(map.get("userId").toString(),user);
+            if(userInfoBody.getStatus().equals("1")) {
+                List<Map> userInfoResultList = (List<Map>) userInfoBody.getData();
+                //用户信息封装成Map
+                Map userMap = new HashMap();
+                for (Map map : userInfoResultList) {
+                    BasicUserInfoDTO user = new BasicUserInfoDTO();
+                    user.setUserId(map.get("userId").toString());
+                    if (map.containsKey("nickname"))
+                        user.setNickname(map.get("nickname").toString());
+                    if (map.containsKey("profilePictureUrl"))
+                        user.setProfilePictureUrl(map.get("profilePictureUrl").toString());
+                    userMap.put(map.get("userId").toString(), user);
+                }
+                //重构返回消息体
+                for (Map map : resultList) {
+                    String userId = map.get("userId").toString();
+                    BasicUserInfoDTO user = (BasicUserInfoDTO) userMap.get(userId);
+                    if (user.getNickname() != null)
+                        map.put("nickname", user.getNickname());
+                    if (user.getProfilePictureUrl() != null)
+                        map.put("profilePictureUrl", user.getProfilePictureUrl());
+                }
             }
-            //重构返回消息体
-            for(Map map:resultList){
-                String userId=map.get("userId").toString();
-                BasicUserInfoDTO user=(BasicUserInfoDTO) userMap.get(userId);
-                if(user.getNickname()!=null)
-                    map.put("nickname",user.getNickname());
-                if(user.getProfilePictureUrl()!=null)
-                    map.put("profilePictureUrl",user.getProfilePictureUrl());
-            }
-            respondBody=RespondBuilder.buildNormalResponse(resultList);
+            Map resultMap=new HashMap();
+            resultMap.put("currentPage",momentDTO.getCurrentPage());
+            resultMap.put("pageNum",pageNum);
+            resultMap.put("pageSize",momentDTO.getPageSize());
+            resultMap.put("recordNum",recordNum);
+            resultMap.put("commentList",resultList);
+            respondBody=RespondBuilder.buildNormalResponse(resultMap);
         }catch (Exception e){
             e.printStackTrace();
             respondBody=RespondBuilder.buildErrorResponse(e.getMessage());
