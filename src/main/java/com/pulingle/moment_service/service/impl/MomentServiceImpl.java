@@ -232,7 +232,7 @@ public class MomentServiceImpl implements MomentService {
 
     @Override
     public RespondBody queryMomentsByUserId(MomentDTO momentDTO, HttpServletRequest request) {
-        RespondBody respondBody;
+        RespondBody respondBody=new RespondBody();
         //返回数据
         Map data = new HashMap();
         //用户身份，0不是好友，1是好友，2是自己
@@ -246,9 +246,13 @@ public class MomentServiceImpl implements MomentService {
         int offset;
         List<Map> resultList;
         try {
+            respondBody.setStatus("1");
+            respondBody.setMsg("0000");
             //根据是否登录，是否好友按权限查询某用户动态信息
             //没登录，则为查询公开动态
             if (request.getHeader("token") == null || request.getHeader("token").equals("")) {
+                respondBody.setStatus("2");
+                respondBody.setMsg("用户未登录");
                 //计算分页查询的条件
                 recordNum = momentMapper.countMomentByUserIdForPrivacy(momentDTO.getUserId(), 1);
                 d = (double) recordNum / (double) momentDTO.getPageSize();
@@ -315,6 +319,9 @@ public class MomentServiceImpl implements MomentService {
                     }
                 }catch (Exception e){
                     e.printStackTrace();
+
+                    respondBody.setStatus("2");
+                    respondBody.setMsg("用户未登录");
                     //身份不是好友
                     identity = 0;
                     //计算分页查询的条件
@@ -385,7 +392,7 @@ public class MomentServiceImpl implements MomentService {
             data.put("pageNum", pageNum);
             data.put("resultList", resultList);
             data.put("userInfo", userInfo);
-            respondBody = RespondBuilder.buildNormalResponse(data);
+            respondBody.setData(data);
         } catch (Exception e) {
             e.printStackTrace();
             respondBody = RespondBuilder.buildErrorResponse(e.getMessage());
