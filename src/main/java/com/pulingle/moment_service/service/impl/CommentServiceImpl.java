@@ -130,10 +130,14 @@ public class CommentServiceImpl implements com.pulingle.moment_service.service.C
                 for (Map map : userInfoResultList) {
                     BasicUserInfoDTO user = new BasicUserInfoDTO();
                     user.setUserId(map.get("userId").toString());
-                    if (map.containsKey("nickname"))
+                    if(map.get("nickname")!=null)
                         user.setNickname(map.get("nickname").toString());
-                    if (map.containsKey("profilePictureUrl"))
+                    else
+                        user.setNickname("null");
+                    if (map.get("profilePictureUrl")!=null)
                         user.setProfilePictureUrl(map.get("profilePictureUrl").toString());
+                    else
+                        user.setProfilePictureUrl(null);
                     userMap.put(map.get("userId").toString(), user);
                 }
                 //重构返回消息体
@@ -144,6 +148,8 @@ public class CommentServiceImpl implements com.pulingle.moment_service.service.C
                         map.put("nickname", user.getNickname());
                     if (user.getProfilePictureUrl() != null)
                         map.put("profilePictureUrl", user.getProfilePictureUrl());
+                    else
+                        map.put("profilePictureUrl", null);
                 }
             }
             Map resultMap=new HashMap();
