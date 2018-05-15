@@ -84,7 +84,7 @@ public class MomentServiceImpl implements MomentService {
             userIdListDTO.setUserId(momentDTO.getUserId());
             RespondBody userFriendListBody = outUserInfoFeign.getFriendList(userIdListDTO);
             if (userFriendListBody.getStatus().equals("0"))
-                return RespondBuilder.buildErrorResponse("获取用户好友列表失败");
+                return RespondBuilder.buildNormalResponse("暂无好友");
             List<String> idList = (List<String>) userFriendListBody.getData();
             //计算分页查询的条件
             long recordNum = momentMapper.countFriendMoments(idList);
