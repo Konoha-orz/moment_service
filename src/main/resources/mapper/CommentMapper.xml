@@ -15,7 +15,7 @@
         </foreach>
     </select>
     <select id="queryCommentByCIL" resultType="java.util.Map">
-        SELECT comment_id AS commentId,user_id AS userId,DATE_FORMAT(create_time,'%Y-%m-%d %h:%m:%s') AS createTime,content FROM comment
+        SELECT comment_id AS commentId,user_id AS userId,DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') AS createTime,content FROM comment
         WHERE comment_id IN
         <foreach collection="idList" item="id" open="(" close=")" separator=",">
             #{id}

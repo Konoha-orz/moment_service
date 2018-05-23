@@ -5,7 +5,7 @@
 <mapper namespace="com.pulingle.moment_service.mapper.MomentMapper">
     <sql id="allColumn">
          moment_id AS momentId,user_id AS userId,thumb_users_list AS thumbUsersList,picture_list AS pictureList,
-         content,DATE_FORMAT(create_time,'%Y-%m-%d %h:%m:%s')AS createTime,comment_list AS commentList,privacy_lev AS privacyLev
+         content,DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s')AS createTime,comment_list AS commentList,privacy_lev AS privacyLev
     </sql>
     <insert id="insert" useGeneratedKeys="true" keyProperty="momentId" parameterType="Moment">
         INSERT  INTO moment(user_id,thumb_users_list,picture_list,content,create_time,comment_list,privacy_lev)
