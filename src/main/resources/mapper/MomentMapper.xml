@@ -77,7 +77,7 @@
             <!--user_id=#{userId}-->
         <!--</where>-->
         <!--ORDER BY moment_id DESC-->
-        <!--limit #{offset},#{size}-->
+    <!--limit #{offset},#{size}-->
     <!--</select>-->
     <select id="countMomentByUserIdForPrivacy" resultType="java.lang.Long">
         SELECT  COUNT(moment_id) FROM moment
